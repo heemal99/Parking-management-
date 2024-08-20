@@ -1,0 +1,450 @@
+from tkinter import *
+from tkinter import messagebox
+import sqlite3
+import datetime
+
+conn = sqlite3.connect('PMS.db')
+conn.execute("""CREATE TABLE IF NOT EXISTS PARKING (REG INT PRIMARY KEY NOT NULL,NAME TEXT NOT NULL,MOBILE CHAR(12) NOT NULL,EMAIL CHAR(50) NOT NULL,
+USERNAME CHAR(50) NOT NULL,PASSWORD CHAR(50) NOT NULL,VEHICLE CHAR(15) NOT NULL,PARK CHAR(10) NOT NULL, TYPE CHAR(12) NOT NULL ,STATUS CHAR(5) NOT NULL,SLOT CHAR(5) NOT NULL,PB CHAR(5) NOT NULL,C CHAR(5),CIN CHAR(50),COUT CHAR(50))""")
+conn.commit()
+conn.close()
+
+
+
+
+def Show():
+    conn = sqlite3.connect('PMS.db')
+    cursor = conn.execute("SELECT * FROM PARKING")
+    for row in cursor:
+        print(row)
+    conn.commit()
+    conn.close()
+
+def Base_Page():
+    
+    global root
+    root=Tk()
+    w,h=root.winfo_screenwidth(),root.winfo_screenheight()
+    root.geometry("%dx%d+0+0" % (w,h))
+    icon=PhotoImage(file="image.png")
+    logo=Label(root,image=icon)
+    PMS=Label(root,text="Parking Management System",font=("Helvetica", 62))
+    logo.grid(row=1,column=0)
+    PMS.grid(row=1,column=1,columnspan=2)
+    
+    icon1=PhotoImage(file="Login.png")
+    Log=Label(root,image=icon1)
+    Login_Button=Button(root,text="Login",font=("Times New Roman",32),bd=3,command=Login_Page)
+
+    icon2=PhotoImage(file="NewUser.png")
+    NUsr=Label(root,image=icon2)
+    NewUser_Button=Button(root,text="Admin Panel",font=("Times New Roman",32),bd=3,command=BptoNu)
+    icon3=PhotoImage(file="Availability.png")
+    Avai=Label(root,image=icon3)
+    Availability_Button=Button(root,text="Availability",font=("Times New Roman",32),bd=3,command=Availability)
+    Log.grid(row=2)
+    Login_Button.grid(row=3,column=0)
+    NUsr.grid(row=2,column=1)
+    NewUser_Button.grid(row=3,column=1)
+    Avai.grid(row=2,column=2)
+    Availability_Button.grid(row=3,column=2)
+    root.mainloop()
+
+
+
+def Login_Page():
+    root.destroy()
+    global Login_GUI
+    Login_GUI=Tk()
+    Login_GUI.title("Login Page")
+    w,h=Login_GUI.winfo_screenwidth(),Login_GUI.winfo_screenheight()
+    Login_GUI.geometry("%dx%d+0+0" % (w,h))
+    icon=PhotoImage(file="image.png")
+    logo=Label(Login_GUI,image=icon)
+    PMS=Label(Login_GUI,text="Parking Management System",font=("Helvetica", 62))
+    logo.grid(row=1,column=0)
+    PMS.grid(row=1,column=1,columnspan=4)
+    
+    lab1=Label(Login_GUI,text="User Name",padx=20,pady=5,font=("Times New Roman",28))
+    lab2=Label(Login_GUI,text="Password",padx=20,pady=5,font=("Times New Roman",28))
+    lab3=Label(Login_GUI,text="\n",font=("Times New Roman",28))
+    global name
+    global pswd
+    name=Entry(Login_GUI,font=("Times New Roman",28))
+    pswd=Entry(Login_GUI,show="*",font=("Times New Roman",28))
+    
+    Login_Button=Button(Login_GUI,text=" Login  ",command=validate,font=("Times New Roman",32))
+    NewUser_Button=Button(Login_GUI,text="Admin Panel",command=LptoNu,font=("Times New Roman",32))
+    
+    lab1.grid(row=2,column=1)
+    lab2.grid(row=3,column=1)
+    name.grid(row=2,column=2)
+    pswd.grid(row=3,column=2)
+    lab3.grid(row=4)
+    Login_Button.grid(row=5,column=1)
+    NewUser_Button.grid(row=5,column=2)
+    Login_GUI.mainloop()
+
+def LptoNu():
+    Login_GUI.destroy()
+    NewUser_Page()
+    
+def BptoNu():
+    root.destroy()
+    NewUser_Page()
+    
+def validate():
+    c=0
+    conn = sqlite3.connect('PMS.db')
+    cursor = conn.execute("SELECT USERNAME,PASSWORD FROM PARKING")
+    if((str(name.get())=="Admin" ) and (str(pswd.get())=="Admin")):    # If Username and Password is of Admin, Login as Admin
+            c=2
+    for row in cursor:
+        if( (str(name.get())==row[0]) and (str(pswd.get())==row[1])):               # If Username & Password matches, Break & Proceed
+            c=1
+            break
+        else:                                                                                                               # If doesn't match, Warning
+            c=0
+    if(c==1):
+        messagebox.showinfo("Status", "Login Successful")
+        User_Page()
+    if(c==0):
+        messagebox.showinfo("Status", "Login Failed.\nPlease Try Again")
+    
+    conn.commit()
+        
+
+
+
+
+def Display_Users():
+    def delete_user(reg_no):
+        if reg_no:
+            conn = sqlite3.connect('PMS.db')
+            conn.execute("DELETE FROM PARKING WHERE REG=?", (reg_no,))
+            conn.commit()
+            conn.close()
+            
+            messagebox.showinfo("Status", f"User with Registration Number {reg_no} Deleted Successfully")
+            update_user_list()
+
+    def update_user_list():
+        for widget in display_frame.winfo_children():
+            widget.destroy()
+        
+        conn = sqlite3.connect('PMS.db')
+        cursor = conn.execute("SELECT * FROM PARKING")
+        users = cursor.fetchall()
+        conn.close()
+        
+        headers = ["Reg. No.", "Name", "Mobile", "Email", "Username", "Delete"]
+        for col, text in enumerate(headers):
+            header_label = Label(display_frame, text=text, font=("Helvetica", 14, "bold"), bg="#f0f0f0", fg="#333333", relief="solid", padx=10, pady=10)
+            header_label.grid(row=0, column=col, sticky="nsew")
+        
+        for i, user in enumerate(users):
+            user_info = [user[0], user[1], user[2], user[3], user[4]]
+            for col, info in enumerate(user_info):
+                info_label = Label(display_frame, text=info, font=("Helvetica", 12), bg="#ffffff", fg="#000000", padx=10, pady=10)
+                info_label.grid(row=i + 1, column=col, sticky="w")
+            
+            delete_button = Button(display_frame, text="Delete", command=lambda reg_no=user[0]: delete_user(reg_no), font=("Helvetica", 12), relief="flat", padx=10, pady=5)
+            delete_button.grid(row=i + 1, column=len(user_info), sticky="e")
+    
+    display_window = Toplevel()
+    display_window.title("All Registered Users")
+    display_window.geometry("1000x600")
+    
+    display_window.configure(bg="#f0f0f0")
+    
+    canvas = Canvas(display_window, bg="#f0f0f0")
+    scrollbar = Scrollbar(display_window, orient=VERTICAL, command=canvas.yview)
+    display_frame = Frame(canvas, bg="#f0f0f0")
+    
+    canvas.create_window((0, 0), window=display_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.pack(side=LEFT, fill=BOTH, expand=True)
+    scrollbar.pack(side=RIGHT, fill=Y)
+    
+    display_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+    
+    update_user_list()
+
+
+def NewUser_Page():
+    global NewUser_GUI
+    NewUser_GUI = Tk()
+    NewUser_GUI.title("User Registration Page")
+    w, h = NewUser_GUI.winfo_screenwidth(), NewUser_GUI.winfo_screenheight()
+    NewUser_GUI.geometry(f"{w}x{h}+0+0")
+    
+    icon = PhotoImage(file="image.png")
+    logo = Label(NewUser_GUI, image=icon)
+    PMS = Label(NewUser_GUI, text="Parking Management System", font=("Helvetica", 62))
+    
+    logo.grid(row=1, column=0)
+    PMS.grid(row=1, column=1, columnspan=3, sticky="ew")
+    
+    labels = ["Name", "Reg. No.", "Mobile", "Email ID", "User Name", "Password"]
+    for i, text in enumerate(labels, start=2):
+        Label(NewUser_GUI, text=text, padx=20, pady=5, font=("Times New Roman", 23)).grid(row=i, column=0)
+    
+    global Name, Register, Mobile, Email, UserName, Pass
+    Name = Entry(NewUser_GUI, font=("Times New Roman", 23))
+    Register = Entry(NewUser_GUI, font=("Times New Roman", 23))
+    Mobile = Entry(NewUser_GUI, font=("Times New Roman", 23))
+    Email = Entry(NewUser_GUI, font=("Times New Roman", 23))
+    UserName = Entry(NewUser_GUI, font=("Times New Roman", 23))
+    Pass = Entry(NewUser_GUI, font=("Times New Roman", 23), show="*")
+    
+    Name.grid(row=2, column=1)
+    Register.grid(row=3, column=1)
+    Mobile.grid(row=4, column=1)
+    Email.grid(row=5, column=1)
+    UserName.grid(row=6, column=1)
+    Pass.grid(row=7, column=1)
+    
+    Submit_Button = Button(NewUser_GUI, text="Submit", command=DB_Reg, font=("Times New Roman", 25), bd=3)
+    Submit_Button.grid(row=8, column=1)
+    
+    Display_Button = Button(NewUser_GUI, text="Display Users", command=Display_Users, font=("Times New Roman", 25), bd=3)
+    Display_Button.grid(row=9, column=1)
+    
+    NewUser_GUI.configure()
+    NewUser_GUI.mainloop()
+def DB_Reg():
+    
+    dbReg=int(Register.get())
+    dbName=str(Name.get())
+    dbMobile=str(Mobile.get())
+    dbEmail=str(Email.get())
+    dbUserName=str(UserName.get())
+    dbPass=str(Pass.get())
+    dbVehicle=str("NIL")
+    dbPark=str("NIL")
+    dbType=str("NIL")
+    dbStatus=str("Not Parked")
+    dbSlot=str("NIL")
+    dbPb=str("NIL")
+    if(str(Register.get())=="" or str(Name.get())=="" or str(Mobile.get())==""  or str(Email.get())=="" or str(UserName.get())=="" or str(Pass.get())==""):
+        messagebox.showinfo("Warning", "Fields can not be Empty !!!")
+    else:
+        conn = sqlite3.connect('PMS.db')
+        cott = sqlite3.connect('PPMS.db')
+        cursor=conn.execute("INSERT INTO PARKING (REG,NAME,MOBILE,EMAIL,USERNAME,PASSWORD,VEHICLE,PARK,TYPE,STATUS,SLOT,PB) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",(dbReg,dbName,dbMobile,dbEmail,dbUserName,dbPass,dbVehicle,dbPark,dbType,dbStatus,dbSlot,dbPb))
+        conn.commit()
+        cursor=cott.execute("INSERT INTO PARKING (REG,NAME,MOBILE,EMAIL,USERNAME,PASSWORD,VEHICLE,PARK,TYPE,STATUS,SLOT,PB) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",(dbReg,dbName,dbMobile,dbEmail,dbUserName,dbPass,dbVehicle,dbPark,dbType,dbStatus,dbSlot,dbPb))
+        cott.commit()
+        messagebox.showinfo("Status", "Successfully Registered\nUse the User Name & Password to Login")
+        NewUser_GUI.destroy()
+        Base_Page()
+
+def User_Page():
+    Login_GUI.destroy()
+    global User_GUI
+    User_GUI=Tk()
+    w,h=User_GUI.winfo_screenwidth(),User_GUI.winfo_screenheight()
+    User_GUI.geometry("%dx%d+0+0" % (w,h))
+    icon=PhotoImage(file="image.png")
+    logo=Label(User_GUI,image=icon)
+    PMS=Label(User_GUI,text="Parking Management System",font=("Helvetica", 62))
+    logo.grid(row=1,column=0)
+    PMS.grid(row=1,column=1,columnspan=3)
+
+    icon1=PhotoImage(file="Book.png")
+    Book=Label(User_GUI,image=icon1)
+    BookParking_Button=Button(User_GUI,text="Book Parking",font=("Times New Roman",32),bd=3,command=Book_Page)
+
+
+
+    icon3=PhotoImage(file="Logout.png")
+    Logout=Label(User_GUI,image=icon3)
+    Logout_Button=Button(User_GUI,text="Logout",font=("Times New Roman",32),bd=3,command=UptoBp)
+
+    icon4=PhotoImage(file="Parking.png")
+    Y=Label(User_GUI,text="Registration No.",font=("Times New Roman",28),padx=20,pady=5)
+    global Z
+    Z=Entry(User_GUI,font=("Times New Roman",28))
+    Details=Label(User_GUI,image=icon4)
+    Details_Button=Button(User_GUI,text="Details",font=("Times New Roman",32),bd=3,command=De)
+    
+    Book.grid(row=2)
+    BookParking_Button.grid(row=3,column=0)
+    
+    Logout.grid(row=2,column=2)
+    Logout_Button.grid(row=3,column=2)
+    Details.grid(row=2,column=3)
+    Y.grid(row=3,column=3)
+    Z.grid(row=4,column=3)
+    Details_Button.grid(row=5,column=3)
+    User_GUI.mainloop()
+    User_GUI.mainloop()
+    
+def De():
+    zz = int(Z.get())
+    conn = sqlite3.connect('PMS.db')
+    
+    # Fetch the necessary columns from the database
+    cursor = conn.execute("SELECT REG, NAME, MOBILE, EMAIL, VEHICLE, PARK, TYPE, STATUS, SLOT, PB FROM PARKING")
+    
+    Flag = 0
+    for row in cursor:
+        # Check if the registration number matches and the 'PB' field is "P"
+        if(row[0] == zz ):
+            # Create the parking details string
+            S = (f"PARKING DETAILS :\n"
+                 f"REG. NO. = {row[0]}\n"
+                 f"NAME = {row[1]}\n"  # Use correct indexes for fields
+                 f"MOBILE = {row[2]}\n"
+                 f"EMAIL = {row[3]}\n"
+                 f"VEHICLE = {row[4]}\n"
+                 f"PARKING = {row[5]}\n"
+                 f"CATEGORY = {row[6]}\n"
+                 f"STATUS = {row[7]}\n"
+                 f"SLOT = {row[8]}\n")
+            
+            # Display the details in a message box
+            messagebox.showinfo("Details", S)
+            Flag = 1
+    
+    # If the registration number doesn't exist or parking is not booked
+    if Flag == 0:
+        S = "NOTE: Invalid Registration Number/Parking Not Booked"
+        messagebox.showinfo("Note", S)
+    
+    conn.commit()
+    conn.close()
+ 
+
+def UptoBp():
+    messagebox.showinfo("Status","Successfully Logged Off")
+    User_GUI.destroy()
+    Base_Page()
+
+def Book_Page():
+    
+    User_GUI.destroy()
+    global Book_GUI
+    Book_GUI=Tk()
+    Book_GUI.title("Book Parking")
+    w, h = Book_GUI.winfo_screenwidth(),Book_GUI.winfo_screenheight()
+    Book_GUI.geometry("%dx%d+0+0" % (w, h))
+    icon=PhotoImage(file="image.png")
+    logo=Label(Book_GUI,image=icon)
+    PMS=Label(Book_GUI,text="Parking Management System",font=("Helvetica", 62))
+    logo.grid(row=1,column=0)
+    PMS.grid(row=1,column=1,columnspan=3)
+
+    lab1=Label(Book_GUI,text="Reg. No.",padx=20,pady=5,font=("Times New Roman",32))
+    lab2=Label(Book_GUI,text="Vehicle. No.",padx=20,pady=5,font=("Times New Roman",32))
+    lab3=Label(Book_GUI,text="Parking",padx=20,pady=5,font=("Times New Roman",32))
+    lab4=Label(Book_GUI,text="Category",padx=20,pady=5,font=("Times New Roman",32))
+    lab5=Label(Book_GUI,text="Price",padx=20,pady=5,font=("Times New Roman",32))
+    global Reg
+    global Veh
+    Reg=Entry(Book_GUI,font=("Times New Roman",32))
+    Veh=Entry(Book_GUI,font=("Times New Roman",32))
+    global var
+    var = StringVar()
+    R1 = Radiobutton(Book_GUI, text="B Block", variable=var, value="B Block",font=("Times New Roman",32))
+    R2 = Radiobutton(Book_GUI, text="A Block", variable=var, value="A Block",font=("Times New Roman",32))
+    global VehTyp
+    VehTyp = StringVar()
+    R3 = Radiobutton(Book_GUI, text="Two Wheeler", variable=VehTyp, value="2 Wheeler",command=CalPrice2,font=("Times New Roman",32))
+    R4 = Radiobutton(Book_GUI, text="Four Wheeler", variable=VehTyp, value="4 Wheeer",command=CalPrice4,font=("Times New Roman",32))
+    
+    
+    Book_Button=Button(Book_GUI,text="Book Now",command=Park,font=("Times New Roman",32))
+    
+    lab1.grid(row=2,column=0)
+    Reg.grid(row=2,column=1)
+
+    lab2.grid(row=3,column=0)
+    Veh.grid(row=3,column=1)
+
+    lab3.grid(row=4,column=0)
+    R1.grid(row=4,column=1)
+    R2.grid(row=4,column=2)
+
+    lab4.grid(row=5,column=0)
+    R3.grid(row=5,column=1)
+    R4.grid(row=5,column=2)
+
+    lab5.grid(row=6,column=0)
+    global amt
+    amt = Label(Book_GUI,font=("Times New Roman",32))
+    amt.grid(row=6,column=1)
+    
+    Book_Button.grid(row=7,columnspan=2)
+    
+    Book_GUI.mainloop()
+
+
+def CalPrice2():
+        amt.config(text="1000")
+def CalPrice4():
+        amt.config(text="1500")
+    
+
+def Park():
+    dbR = str(Reg.get())  # Registration number
+    dbV = str(Veh.get())  # Vehicle information
+    dbA = str(var.get())  # Parking area
+    dbT = str(VehTyp.get())  # Vehicle type
+
+    if dbR == "" or dbV == "" or dbA == "" or dbT == "":
+        messagebox.showinfo("Warning", "Fields Cannot Be Empty !!!")
+    else:
+        conn = sqlite3.connect('PMS.db')
+        cursor = conn.execute("SELECT REG, VEHICLE, PARK, TYPE, STATUS FROM PARKING")
+        
+        
+
+        
+        conn.commit()
+        conn.close()
+        
+        messagebox.showinfo("Status", "Successfully Booked Parking")
+        Book_GUI.destroy()
+        Base_Page()
+
+def Availability():
+    Tot34=20
+    Tot29=15
+    C34=0
+    C29=0
+    conn = sqlite3.connect('PMS.db')
+    cursor = conn.execute("SELECT PARK FROM PARKING")
+    for row in cursor:
+        if(row[0]=="A Block"):
+            C34=C34+1
+        if(row[0]=="B Block"):
+            C29=C29+1
+    conn.commit()
+    Av34=str(Tot34-C34)
+    Av29=str(Tot29-C29)
+    messagebox.showinfo("Status","Available Parking Slots\n\nBLOCK B ---- "+Av29+"\n\nBLOCK A ----  "+Av34)
+
+
+def AvailSlots():
+    S34=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+    S29=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    A34=""
+    A29=""
+    conn = sqlite3.connect('PMS.db')
+    cursor = conn.execute("SELECT PARK,STATUS,SLOT FROM PARKING")
+    for row in cursor:
+        if(row[0]=="A Block" and row[1]=="Parked" and row[2]!="NIL"):
+            S34[int(row[2])]=-1
+        if(row[0]=="B Block" and row[1]=="Parked" and row[2]!="NIL"):
+            S29[int(row[2])]=-1
+    for i in S34:
+        if(i!=-1 and i!=0):
+            A34=A34+str(i)+" "
+    for i in S29:
+        if(i!=-1 and i!=0):
+            A29=A29+str(i)+" "
+    conn.commit()
+    messagebox.showinfo("Status","Available Parking Slots\n\nBLOCK B ---- "+A29+"\n\nBLOCK A ----  "+A34)
+
+Base_Page()
