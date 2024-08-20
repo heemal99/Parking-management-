@@ -50,6 +50,7 @@ def Display_Users():
     canvas.configure(yscrollcommand=scrollbar.set)
     canvas.pack(side=LEFT, fill=BOTH, expand=True)
     scrollbar.pack(side=RIGHT, fill=Y)
+    ####
     
     display_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
     
